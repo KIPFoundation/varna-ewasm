@@ -25,4 +25,4 @@ function exists(path) {
   });
 }
 
-module.exports = {joinCmd, exec, exists, readFile};
+module.exports = {joinCmd, exec, exists};
