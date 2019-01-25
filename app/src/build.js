@@ -7,6 +7,7 @@ const { deflateSync } = require("zlib");
 const { dirname } = require("path");
 const { execSync } = require("child_process");
 const { Writable } = require("stream");
+const homeDir = process.env["HOME"];
 
 const { exec, joinCmd, exists } = require("./common.js");
 
@@ -39,7 +40,7 @@ const { exec, joinCmd, exists } = require("./common.js");
 //             name: "linking wasm",
 //             success: true,
 //             console: ""
-//         }
+//         }llvmDir
 //     ]
 // }
 
@@ -103,7 +104,7 @@ function serialize_file_data(filename, compress) {
   if (compress) {
     content = deflateSync(content);
   }
-  return content;       //.toString("base64");  removing base64 
+  return content.toString("base64");   
 }
 
 function build_c_file(input, options, output, cwd, compress, result_obj) {
@@ -166,13 +167,14 @@ function link_obj_files(obj_files, options, cwd, has_cpp, output, result_obj) {
 
       //  extension for wasmGC 
 
-async function wasmGC(wasmFile, callback) {
+async function wasmgc(wasmFile) {
   if (!await exists(wasmFile)) {
     throw new Error("wasm is not found")
   }
   await exec(joinCmd([wasmGCCmd,wasmFile]));
   return wasmFile;
 }
+
 
  //  extension code for chisel
 async function chisel(outputFile, callback) {
@@ -183,7 +185,7 @@ async function chisel(outputFile, callback) {
   return outputFile;
 }
 
- //  extension code for wasmdis
+//  //  extension code for wasmdis
 async function wasmdis(watFile, callback) {
   if (!await exists(watFile)) {
     throw new Error("wat is not found")
@@ -192,12 +194,13 @@ async function wasmdis(watFile, callback) {
   return watFile;
 }
 
-function build_project(project, base) {
+ async function build_project(project, base) {
   const output = project.output;
   const compress = project.compress;
   const build_result = { };
   const dir = base + '.$';
   const result = base + '.wasm';
+  const abc =base +'.wat';
 
   const complete = (success, message) => {
     shell_exec("rm -rf " + dir);
@@ -228,8 +231,11 @@ function build_project(project, base) {
     if (!existsSync(subdir)) {
       mkdirSync(dir);
     }
+   
     const src = file.src;
     writeFileSync(fileName, src);
+    // console.log(readFileSync(fileName));
+    writeFileSync('./aaa.c', src);
   }
   const obj_files = [];
   let clang_cpp = false;
@@ -246,7 +252,7 @@ function build_project(project, base) {
  
     build_result.tasks.push(result_obj);
     if (type == 'c') {
-      success = build_c_file(fileName, options, fileName + '.o', dir, compress, result_obj);
+      success = build_c_file(fileName, options, fileName+'.o', dir, compress, result_obj);    
       obj_files.push(fileName + '.o');
     } else if (type == 'cpp') {
       clang_cpp = true;
@@ -269,23 +275,29 @@ function build_project(project, base) {
   }
 
 
-  // build_result.output = wasmdis(chisel(wasmGC(serialize_file_data(result, compress))));
+  // build_result.output = chisel(wasmgc(serialize_file_data(result, compress)));
  
  //  extension for wasmGC and chisel and wasmdis
 
-  let a= serialize_file_data(result, compress);
-  let b = wasmGC(a);
-  let c = chisel(b);
-  let d = wasmdis(c);
-  build_result.output = d;
+  // let a= serialize_file_data(result, compress);
+  // console.log(result);
+  let a= readFileSync(result);
+  writeFileSync('./cBu.wasm',a);
+  // let b = await wasmgc(a);
+  // let c =await chisel(b);
+  //   writeFileSync('./chisel.wasm',c);
+
+  // let d =await wasmdis(c);
+  // writeFileSync('./nww.wat', d)
+  build_result.output = a.toString("base64");
   return complete(true, 'Success');
 }
 
-module.exports = (input, callback) => {
+module.exports = async (input, callback) => {
   const baseName = tempDir + '/build_' + Math.random().toString(36).slice(2);
   try {
     console.log('Building in ', baseName);
-    const result = build_project(input, baseName);
+    const result = await build_project(input, baseName);
     callback(null, result);
   } catch (ex) {
     callback(ex);
