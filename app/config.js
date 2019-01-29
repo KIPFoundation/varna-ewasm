@@ -18,7 +18,7 @@ exports.wasmGCCmd = homeDir + '/.cargo/bin/wasm-gc';
 
 exports.chiselCmd = homeDir + '/.cargo/bin/chisel';
 
-exports.wasmdisCmd = homeDir + '/binaryen/bin/wasm-dis';
+exports.wasmdisCmd = homeDir + '/binaryen-1.37.35/bin/wasm-dis';
 
 exports.tempDir = "/tmp";
 

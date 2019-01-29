@@ -7,9 +7,11 @@ const { deflateSync } = require("zlib");
 const { dirname } = require("path");
 const { execSync } = require("child_process");
 const { Writable } = require("stream");
-const homeDir = process.env["HOME"];
-
 const { exec, joinCmd, exists } = require("./common.js");
+const gcWasm = 'gcWasm.wasm';
+const chiseledWasm = 'chiseledWasmFile.wasm';
+const wasmDis = 'wasmDisFile.wat';
+
 
 // Input: JSON in the following format
 // {
@@ -165,42 +167,58 @@ function link_obj_files(obj_files, options, cwd, has_cpp, output, result_obj) {
   return true;
 }
 
-      //  extension for wasmGC 
-
-async function wasmgc(wasmFile) {
-  if (!await exists(wasmFile)) {
-    throw new Error("wasm is not found")
+//  extension for wasmGC 
+async function wasmGC(wasmFile) {
+  if (!existsSync(wasmFile)) {
+    throw new Error("Wasm file is not found")
   }
-  await exec(joinCmd([wasmGCCmd,wasmFile]));
-  return wasmFile;
+  try{
+    await exec(joinCmd([wasmGCCmd, wasmFile, '-o', gcWasm]));
+    console.log("Optimised Wasm File Name: " + gcWasm);
+    return gcWasm;
+  } catch(e){
+    return e.message;
+  }
+}
+
+//  extension for chisel 
+async function chisel(optimisedWasmFile) {
+  if (!existsSync(optimisedWasmFile)) {
+    throw new Error("Wasm is not optimised")
+  }
+ try{
+  await exec(joinCmd([chiselCmd, optimisedWasmFile, chiseledWasm]));
+  console.log("Chiseled File Name: " + chiseledWasm);
+  return chiseledWasm;
+  } catch (e){
+   return e.message;
+ }
+}
+
+//  extension for wasmdis
+async function wasmdis(chiseledWasmFile) {
+  if (!existsSync(chiseledWasmFile)) {
+    throw new Error("Wat file is not found")
+  }
+  try {
+  await exec(joinCmd([wasmdisCmd, chiseledWasmFile, '-o', wasmDis]));  
+  console.log("Wasmdis File Name: " + wasmDis);
+  } catch(e){
+    return e.message;
+  }
+  let wasmDisFileContent;
+  wasmDisFileContent = readFileSync(wasmDis, 'utf8');
+  return wasmDisFileContent;
 }
 
 
- //  extension code for chisel
-async function chisel(outputFile, callback) {
-  if (!await exists(outputFile)) {
-    throw new Error("wasm is not chiseled")
-  }
-  await exec(joinCmd([chiselCmd, outputFile]));
-  return outputFile;
-}
-
-//  //  extension code for wasmdis
-async function wasmdis(watFile, callback) {
-  if (!await exists(watFile)) {
-    throw new Error("wat is not found")
-  }
-  await exec(joinCmd([wasmdisCmd, watFile]));
-  return watFile;
-}
-
- async function build_project(project, base) {
+async function build_project(project, base) {
   const output = project.output;
   const compress = project.compress;
   const build_result = { };
   const dir = base + '.$';
   const result = base + '.wasm';
-  const abc =base +'.wat';
+  // const final =base +'.wat';
 
   const complete = (success, message) => {
     shell_exec("rm -rf " + dir);
@@ -212,7 +230,7 @@ async function wasmdis(watFile, callback) {
     build_result.message = message;
     return build_result;
   };
-  if (output != 'wat') {
+  if (output != 'wasm') {
     return complete(false, 'Invalid output type ' + output);
   }
 
@@ -266,30 +284,22 @@ async function wasmdis(watFile, callback) {
 
   const link_options = project.link_options;
   const link_result_obj = {
-    name: 'linking wat'
+    name: 'linking wasm'
   };
 
   build_result.tasks.push(link_result_obj);
   if (!link_obj_files(obj_files, link_options, dir, clang_cpp, result, link_result_obj)) {
     return complete(false, 'Error during linking');
   }
-
-
-  // build_result.output = chisel(wasmgc(serialize_file_data(result, compress)));
  
  //  extension for wasmGC and chisel and wasmdis
 
-  // let a= serialize_file_data(result, compress);
-  // console.log(result);
-  let a= readFileSync(result);
-  writeFileSync('./cBu.wasm',a);
-  // let b = await wasmgc(a);
-  // let c =await chisel(b);
-  //   writeFileSync('./chisel.wasm',c);
-
-  // let d =await wasmdis(c);
-  // writeFileSync('./nww.wat', d)
-  build_result.output = a.toString("base64");
+  let test= readFileSync(result);
+  writeFileSync('./clang.wasm',test);
+  let wasmgcFile = await wasmGC(result);
+  let chiseledFile =await chisel(wasmgcFile);
+  let watFile =await wasmdis(chiseledFile);
+  build_result.output = serialize_file_data(result, compress);
   return complete(true, 'Success');
 }
 
