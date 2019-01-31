@@ -87,7 +87,8 @@ function get_clang_options(options) {
 
 
 function get_lld_options(options) {
-  const clang_flags = `--target=wasm32-unknown-unknown-wasm --sysroot=${sysroot} -nostartfiles -Wl,--allow-undefined,--no-entry,--no-threads`;
+  // const clang_flags = `--target=wasm32-unknown-unknown-wasm --sysroot=${sysroot} -nostartfiles -Wl,--allow-undefined,--no-entry,--no-threads`;  // Yuri's code is not compatible for Varna
+  const clang_flags = ` --target=wasm32-unknown-unknown-wasm --sysroot=${sysroot} -O3 -g -nostartfiles -Wl,--allow-undefined,--demangle,--no-entry,--no-threads -Wl,--export=_main -fvisibility=hidden `
   if (!options) {
     return clang_flags;
   }
@@ -181,13 +182,13 @@ async function wasmGC(wasmFile) {
   }
 }
 
-//  extension for chisel 
+//  extension for chisel -> wasm-chisel is failed to produce proper output 
 async function chisel(optimisedWasmFile) {
   if (!existsSync(optimisedWasmFile)) {
     throw new Error("Wasm is not optimised")
   }
  try{
-  await exec(joinCmd([chiselCmd, optimisedWasmFile, chiseledWasm]));
+  await exec(joinCmd([chiselCmd, optimisedWasmFile, chiseledWasm])); 
   console.log("Chiseled File Name: " + chiseledWasm);
   return chiseledWasm;
   } catch (e){
@@ -299,7 +300,7 @@ async function build_project(project, base) {
   let wasmgcFile = await wasmGC(result);
   let chiseledFile =await chisel(wasmgcFile);
   let watFile =await wasmdis(chiseledFile);
-  build_result.output = serialize_file_data(result, compress);
+  build_result.output = serialize_file_data(watFile, compress);
   return complete(true, 'Success');
 }
 
