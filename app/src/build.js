@@ -1,7 +1,7 @@
 // Translated from https://github.com/wasdk/wasmexplorer-service/blob/master/web/build.php
 // FIXME make me node.js friendly and async
 
-const { llvmDir, wasmGCCmd, chiselCmd, wasmdisCmd, tempDir, sysroot } = require("../config");
+const { llvmDir, wasmGCCmd, chiselCmd, wasmdisCmd, pychiselCmd, tempDir, sysroot } = require("../config");
 const { mkdirSync, writeFileSync, existsSync, openSync, closeSync, readFileSync, unlinkSync } = require("fs");
 const { deflateSync } = require("zlib");
 const { dirname } = require("path");
@@ -178,24 +178,38 @@ async function wasmGC(wasmFile) {
     console.log("Optimised Wasm File Name: " + gcWasm);
     return gcWasm;
   } catch(e){
-    return e.message;
+    console.log(e.message);
   }
 }
 
 //  extension for chisel -> wasm-chisel is failed to produce proper output 
+// async function chisel(optimisedWasmFile) {
+//   if (!existsSync(optimisedWasmFile)) {
+//     throw new Error("Wasm is not optimised")
+//   }
+//  try{
+//   await exec(joinCmd([chiselCmd, optimisedWasmFile, chiseledWasm])); 
+//   console.log("Chiseled File Name: " + chiseledWasm);
+//   return chiseledWasm;
+//   } catch (e){
+//    return e.message;
+//  }
+// }
+
+// extension for chisel using pywebassembly
 async function chisel(optimisedWasmFile) {
   if (!existsSync(optimisedWasmFile)) {
     throw new Error("Wasm is not optimised")
   }
  try{
-  await exec(joinCmd([chiselCmd, optimisedWasmFile, chiseledWasm])); 
-  console.log("Chiseled File Name: " + chiseledWasm);
-  return chiseledWasm;
-  } catch (e){
-   return e.message;
- }
+  await exec(joinCmd(['cd', pychiselCmd , '&& python3', 'ewasmify.py', "../../app/" + optimisedWasmFile]));
+  return 'gcWasm_ewasmified.wasm';
+  } catch(e){
+    console.log(e);
+    return e.message;
+  }
 }
-
+  
 //  extension for wasmdis
 async function wasmdis(chiseledWasmFile) {
   if (!existsSync(chiseledWasmFile)) {
@@ -254,7 +268,7 @@ async function build_project(project, base) {
     const src = file.src;
     writeFileSync(fileName, src);
     // console.log(readFileSync(fileName));
-    writeFileSync('./aaa.c', src);
+    writeFileSync('./main.c', src);
   }
   const obj_files = [];
   let clang_cpp = false;
@@ -298,8 +312,8 @@ async function build_project(project, base) {
   let test= readFileSync(result);
   writeFileSync('./clang.wasm',test);
   let wasmgcFile = await wasmGC(result);
-  let chiseledFile =await chisel(wasmgcFile);
-  let watFile =await wasmdis(chiseledFile);
+  let chiseledFile = await chisel(wasmgcFile);
+  let watFile = await wasmdis(chiseledFile);
   build_result.output = serialize_file_data(watFile, compress);
   return complete(true, 'Success');
 }

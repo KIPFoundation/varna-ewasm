@@ -18,6 +18,9 @@ exports.wasmGCCmd = homeDir + '/.cargo/bin/wasm-gc';
 
 exports.chiselCmd = homeDir + '/.cargo/bin/chisel';
 
+// exports.pychiselCmd = homeDir + '/codes/varna/pywebassembly/examples/ewasmify.py';
+exports.pychiselCmd = homeDir + '/codes/varna/pywebassembly/examples/';
+
 exports.wasmdisCmd = homeDir + '/binaryen-1.37.35/bin/wasm-dis';
 
 exports.tempDir = "/tmp";
