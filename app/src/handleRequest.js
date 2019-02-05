@@ -69,7 +69,7 @@ module.exports = function handleRequest(req, res) {
     if (req.method != "POST") return notAllowed(res);
     readFormData(req, "json", (err, input) => {
       if (err) return showError(res, err);
-      require('./build')(input, (err, result) => {
+      require('./build').build_c(input, (err, result) => {
         if (err) return showError(res, err);
         res.setHeader('Content-type', 'application/json');
         res.writeHead(200);
@@ -83,7 +83,7 @@ module.exports = function handleRequest(req, res) {
     if (req.method != "POST") return notAllowed(res);
     readFormData(req, "json", (err, input) => {
       if (err) return showError(res, err);
-      require('./build')(input, (err, result) => {
+      require('./build').build_cpp(input, (err, result) => {
         if (err) return showError(res, err);
         res.setHeader('Content-type', 'application/json');
         res.writeHead(200);

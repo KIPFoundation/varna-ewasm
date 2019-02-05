@@ -1,0 +1,1 @@
+extern crate ewasm_api; #[no_mangle] pub  "C" fn main() { ewasm_api::finish_data(b"hello");}

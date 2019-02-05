@@ -21,7 +21,7 @@ const deps = wasmBindgenRoot + '/wasm32-unknown-unknown/release/deps';
 exports.wasmBindgenDeps = [deps, wasmBindgenRoot + '/release/deps'];
 exports.cargoCmd = homeDir + '/.cargo/bin/cargo';
 exports.rustcCmd = homeDir + '/.cargo/bin/rustc';
-exports.wasmBindgenCmd = homeDir + '/.cargo/bin/wasm-bindgen';
+exports.wasmBindgenCmd = homeDir + '/.cargo/bin/wasm-bindgen'; 
 exports.rustfmtCmd = homeDir + '/.cargo/bin/rustfmt';
 exports.sysroot = onServer ?
   homeDir + '/sysroot' :
@@ -44,7 +44,6 @@ exports.pychiselCmd = __dirname + '/../pywebassembly/examples/';
 // exports.wasmdisCmd = homeDir + '/binaryen-1.37.35/bin/wasm-dis';
 exports.wasmdisCmd = __dirname + '/../binaryen-1.37.35/bin/wasm-dis';
 
-exports.wasmdisCmd = homeDir + '/binaryen-1.37.35/bin/wasm-dis';
 
 exports.tempDir = "/tmp";
 

@@ -110,7 +110,7 @@ const {
       }
       try {
         if (!success)
-          return { success, message: "", output: output };
+          return { success, message: "", console: output };
         let wasm = await readFile(wasmFile);
         let ret = { success, message: output };
         
