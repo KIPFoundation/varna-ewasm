@@ -13,39 +13,6 @@ const chiseledWasm = 'chiseledWasmFile.wasm';
 const wasmDis = 'wasmDisFile.wat';
 
 
-// Input: JSON in the following format
-// {
-//     output: "wasm",
-//     files: [
-//         {
-//             type: "cpp",
-//             name: "file.cpp",
-//             options: "-O3 -std=c++98",
-//             src: "puts(\"hi\")"
-//         }
-//     ],
-//     link_options: "--import-memory"
-// }
-// Output: JSON in the following format
-// {
-//     success: true,
-//     message: "Success",
-//     output: "AGFzbQE.... =",
-//     tasks: [
-//         {
-//             name: "building file.cpp",
-//             file: "file.cpp",
-//             success: true,
-//             console: ""
-//         },
-//         {
-//             name: "linking wasm",
-//             success: true,
-//             console: ""
-//         }llvmDir
-//     ]
-// }
-
 function sanitize_shell_output(out) {
   return out; // FIXME
 }
@@ -229,167 +196,13 @@ async function wasmdis(chiseledWasmFile) {
 }
 
 
-async function build_project(project, base) {
-  // const output = project.output;
-  // const files = project.files;
-  // const compress = project.compress;
-  const build_result = { };
-  const dir = base + '.$';
-  const result = base + '.wasm';
-  // const final =base +'.wat';
-
-  const complete = (success, message) => {
-    shell_exec("rm -rf " + dir);
-    if (existsSync(result)) {
-      unlinkSync(result);
-    }
-  
-    build_result.success = success;
-    build_result.message = message;
-
-    return build_result;
-  };
-  // if (output != 'wasm') {
-  //   return complete(false, 'Invalid output type ' + output);
-  // }
-
-  if (!existsSync(dir)) {
-    mkdirSync(dir);
-  }
-  build_result.console = '';
-  let tasks = [];
-
-  // for (let file of files) {
-  //   const name = file.name;
-  //   if (!validate_filename(name)) {
-  //     return complete(false, 'Invalid filename ' + name);
-  //   }
-    
-   
-  //   const code = file.src;
-  //   writeFileSync(fileName, code);
-  //   // console.log(readFileSync(fileName));
-  //   writeFileSync('./main.c', code);
-  // }
-
-  const compress = true;
-
-  const name = "sourceFile.c"
-  //OR
-  const name = "sourceFile.cpp"
-
-  const fileName = dir + '/' + name;
-    const subdir = dirname(fileName);
-    if (!existsSync(subdir)) {
-      mkdirSync(dir);
-    }
-
-
-  const code = project.code;
-  writeFileSync(fileName, code);
-  // console.log(readFileSync(fileName));
-  writeFileSync('./main.c', code);
-
-  let success = true;
-    // Uncomment here
-    const result_obj = {
-      name: `building ${name}`,
-      file: name
-    };
- 
-  tasks.push(result_obj);
-
-  const type = "c";
-  success = build_c_file(fileName, '-O3 -std=c99', fileName + '.o', dir, compress, result_obj);    
-  obj_files.push(fileName + '.o');
-  if (!success) {
-    let message = build_result.message || '';
-    return { success, message, console: tasks[0].console };
-
-    // return complete(false, 'Error during build of ' + name);
-  }
-  //OR//
-  const type = "cpp";
-  clang_cpp = true;
-  success = build_cpp_file(fileName, '-O3 -std=c++98', fileName + '.o', dir, compress, result_obj);
-  obj_files.push(fileName + '.o');
-  if (!success) {
-    let message = build_result.message || '';
-    return { success, message, console: tasks[0].console };
-
-    // return complete(false, 'Error during build of ' + name);
-  }
-
-  const obj_files = [];
-  let clang_cpp = false;
-  for (let file of files) {
-    const name = file.name ; // 'file.c' || 'file.cpp';  // Change this on the basis of route
-    const fileName = dir + '/' + name;
-    
-    // const type = file.type; // Needs to be extracted from the route
-
-    let success = true;
-    // Uncomment here
-    const result_obj = {
-      name: `building ${name}`,
-      file: name
-    };
- 
-    tasks.push(result_obj);
-    if (type == 'c') {
-      success = build_c_file(fileName, '-O3 -std=c99', fileName + '.o', dir, compress, result_obj);    
-      obj_files.push(fileName + '.o');
-    } else if (type == 'cpp') {
-      clang_cpp = true;
-      success = build_cpp_file(fileName, '-O3 -std=c++98', fileName + '.o', dir, compress, result_obj);
-      obj_files.push(fileName + '.o');
-    } 
-    if (!success) {
-      let message = build_result.message || '';
-      return { success, message, console: tasks[0].console };
-
-      // return complete(false, 'Error during build of ' + name);
-    }
-  }
-
-  const link_options = project.link_options;
-  const link_result_obj = {
-    name: 'linking wasm'
-  };
-
-  tasks.push(link_result_obj);
-  // Uncomment Here
-  if (!link_obj_files(obj_files, link_options, dir, clang_cpp, result, link_result_obj)) {
-    return complete(false, 'Error during linking');
-  }
- 
- //  extension for wasmGC and chisel and wasmdis
-
-  let test= readFileSync(result);
-  writeFileSync('./clang.wasm',test);
-  let wasmgcFile = await wasmGC(result);
-  let chiseledFile = await chisel(wasmgcFile);
-  let watFile = await wasmdis(chiseledFile);
-  let success= true;
-  if(success)
-  return { success, message: "", output: watFile };
-
-  build_result.output = serialize_file_data(watFile, compress);
-  return complete(true, 'Success');
-}
-
 async function build_project_c(project, base) {
-  // const output = project.output;
-  // const files = project.files;
-  // const compress = project.compress;
   const build_result = { };
   const dir = base + '.$';
   const result = base + '.wasm';
   const obj_files = [];
   const clang_cpp = false;
 
-  // const final =base +'.wat';
-
   const complete = (success, message) => {
     shell_exec("rm -rf " + dir);
     if (existsSync(result)) {
@@ -398,64 +211,38 @@ async function build_project_c(project, base) {
   
     build_result.success = success;
     build_result.message = message;
-
     return build_result;
   };
-  // if (output != 'wasm') {
-  //   return complete(false, 'Invalid output type ' + output);
-  // }
 
   if (!existsSync(dir)) {
     mkdirSync(dir);
   }
   build_result.console = '';
   let tasks = [];
-
-  // for (let file of files) {
-  //   const name = file.name;
-  //   if (!validate_filename(name)) {
-  //     return complete(false, 'Invalid filename ' + name);
-  //   }
-    
-   
-  //   const code = file.src;
-  //   writeFileSync(fileName, code);
-  //   // console.log(readFileSync(fileName));
-  //   writeFileSync('./main.c', code);
-  // }
-
   const compress = true;
-
   const name = "sourceFile.c"
-
   const fileName = dir + '/' + name;
     const subdir = dirname(fileName);
     if (!existsSync(subdir)) {
       mkdirSync(dir);
     }
 
-
   const code = project.code;
   writeFileSync(fileName, code);
 
-
   let success = true;
-    // Uncomment here
     const result_obj = {
       name: `building ${name}`,
       file: name
     };
  
-  tasks.push(result_obj); // Delete this later
-
+  tasks.push(result_obj); 
   const type = "c";
   success = build_c_file(fileName, '-O3 -std=c99', fileName + '.o', dir, compress, result_obj);    
   obj_files.push(fileName + '.o');
   if (!success) {
     let message = build_result.message || '';
     return { success, message, console: tasks[0].console };
-
-    // return complete(false, 'Error during build of ' + name);
   }
 
   const link_options = project.link_options;
@@ -463,7 +250,7 @@ async function build_project_c(project, base) {
     name: 'linking wasm'
   };
 
-  tasks.push(link_result_obj); // Delete this later
+  tasks.push(link_result_obj); 
   if (!link_obj_files(obj_files, link_options, dir, clang_cpp, result, link_result_obj)) {
     return complete(false, 'Error during linking');
   }
@@ -477,15 +264,11 @@ async function build_project_c(project, base) {
   let watFile = await wasmdis(chiseledFile);
   if(success)
   return { success, message: "", output: watFile };
-
   build_result.output = serialize_file_data(watFile, compress);
   return complete(true, 'Success');
 }
 
 async function build_project_cpp(project, base) {
-  // const output = project.output;
-  // const files = project.files;
-  // const compress = project.compress;
   const build_result = { };
   const dir = base + '.$';
   const result = base + '.wasm';
@@ -493,8 +276,6 @@ async function build_project_cpp(project, base) {
   let success;
   const obj_files = [];
 
-  // const final =base +'.wat';
-
   const complete = (success, message) => {
     shell_exec("rm -rf " + dir);
     if (existsSync(result)) {
@@ -503,74 +284,43 @@ async function build_project_cpp(project, base) {
   
     build_result.success = success;
     build_result.message = message;
-
     return build_result;
   };
-  // if (output != 'wasm') {
-  //   return complete(false, 'Invalid output type ' + output);
-  // }
-
+ 
   if (!existsSync(dir)) {
     mkdirSync(dir);
   }
   build_result.console = '';
   let tasks = [];
-
-  // for (let file of files) {
-  //   const name = file.name;
-  //   if (!validate_filename(name)) {
-  //     return complete(false, 'Invalid filename ' + name);
-  //   }
-    
-   
-  //   const code = file.src;
-  //   writeFileSync(fileName, code);
-  //   // console.log(readFileSync(fileName));
-  //   writeFileSync('./main.c', code);
-  // }
-
   const compress = true;
-
   const name = "sourceFile.cpp"
-
   const fileName = dir + '/' + name;
     const subdir = dirname(fileName);
     if (!existsSync(subdir)) {
       mkdirSync(dir);
     }
 
-
   const code = project.code;
   writeFileSync(fileName, code);
-
-
-    // Uncomment here
     const result_obj = {
       name: `building ${name}`,
       file: name
     };
  
-  tasks.push(result_obj); // Delete this later
-
+  tasks.push(result_obj); 
   const type = "cpp";
   success = build_cpp_file(fileName, '-O3 -std=c++98', fileName + '.o', dir, compress, result_obj);
   obj_files.push(fileName + '.o');
   if (!success) {
     let message = build_result.message || '';
     return { success, message, console: tasks[0].console };
-
-    // return complete(false, 'Error during build of ' + name);
   }
-
-  // const obj_files = [];
-
   const link_options = project.link_options;
   const link_result_obj = {
     name: 'linking wasm'
   };
 
-  tasks.push(link_result_obj); // Delete this later
-  // Uncomment Here
+  tasks.push(link_result_obj); 
   if (!link_obj_files(obj_files, link_options, dir, clang_cpp, result, link_result_obj)) {
     return complete(false, 'Error during linking');
   }
@@ -582,7 +332,6 @@ async function build_project_cpp(project, base) {
   let wasmgcFile = await wasmGC(result);
   let chiseledFile = await chisel(wasmgcFile);
   let watFile = await wasmdis(chiseledFile);
-  // let success= true;
   if(success)
   return { success, message: "", output: watFile };
 
@@ -594,7 +343,6 @@ module.exports.build_c = async (input, callback) => {
   const baseName = tempDir + '/build_' + Math.random().toString(36).slice(2);
   try {
     console.log('Building in ', baseName);
-    console.log(input);
     const result = await build_project_c(input, baseName);
     callback(null, result);
   } catch (ex) {
@@ -606,7 +354,6 @@ module.exports.build_cpp = async (input, callback) => {
   const baseName = tempDir + '/build_' + Math.random().toString(36).slice(2);
   try {
     console.log('Building in ', baseName);
-    console.log(input);
     const result = await build_project_cpp(input, baseName);
     callback(null, result);
   } catch (ex) {

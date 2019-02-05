@@ -44,26 +44,26 @@ module.exports = function handleRequest(req, res) {
     return;
   }
 
-  if (req.url == "/service.php") {
-    if (req.method != "POST") return notAllowed(res);
-    readFormData(req, "form", (err, post) => {
-      if (err) return showError(res, err);
-      if (post.action != "build") return notAllowed(res);
-      let input;
-      try {
-        input = JSON.parse(post.input);
-      } catch (e) {
-        return showError(res, e);
-      }
-      require('./build')(input, (err, result) => {
-        if (err) return showError(res, err);
-        res.setHeader('Content-type', 'application/json');
-        res.writeHead(200);
-        res.end(JSON.stringify(result));
-      });
-    });
-    return;
-  }
+  // if (req.url == "/service.php") {
+  //   if (req.method != "POST") return notAllowed(res);
+  //   readFormData(req, "form", (err, post) => {
+  //     if (err) return showError(res, err);
+  //     if (post.action != "build") return notAllowed(res);
+  //     let input;
+  //     try {
+  //       input = JSON.parse(post.input);
+  //     } catch (e) {
+  //       return showError(res, e);
+  //     }
+  //     require('./build')(input, (err, result) => {
+  //       if (err) return showError(res, err);
+  //       res.setHeader('Content-type', 'application/json');
+  //       res.writeHead(200);
+  //       res.end(JSON.stringify(result));
+  //     });
+  //   });
+  //   return;
+  // }
 
   if (req.url == "/build/c") {
     if (req.method != "POST") return notAllowed(res);
