@@ -319,6 +319,7 @@ async function build_project(project, base) {
 }
 
 module.exports = async (input, callback) => {
+  build_result.output = serialize_file_data(watFile, compress);
   const baseName = tempDir + '/build_' + Math.random().toString(36).slice(2);
   try {
     console.log('Building in ', baseName);
