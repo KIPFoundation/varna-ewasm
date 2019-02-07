@@ -16,3 +16,4 @@ ewasm_api = "0.6.0"
 lto = true
 opt-level = 's'
 debug = true
+incremental= false

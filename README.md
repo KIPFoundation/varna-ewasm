@@ -1,6 +1,6 @@
-# Clang service for KIDE
+# Varna API service for KIDE
 
-This is clang compiler microservice for KIDE. It is also a slug builder.
+This is common(C/C++/Rust) compiler microservice for KIDE. It is also a slug builder.
 
 ## Running service locally
 
@@ -12,6 +12,15 @@ node .
 ```
 
 By default it will run on "0.0.0.0:8083" address. Use `PORT` environment variable to change it.
+
+```
+For C address: 0.0.0.0:8083/build/c
+For C++ address: 0.0.0.0:8083/build/cpp
+For Rust address: 0.0.0.0:8083/build/rs
+```
+
+## Dependencies for Varna 
+To get all dependencies run `make dependencies`
 
 The running of the service requires clang/llvm for WebAssembly installed on the machine. You can [compile it yourself](https://github.com/yurydelendik/wasmception) or unpack version from the precomp folder (see instructions below). Use `WASMCEPTION` path to provide its location.
 
