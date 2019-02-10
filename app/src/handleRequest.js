@@ -1,4 +1,5 @@
 var qs = require('querystring');
+var rustc=require('./rustc');
 
 function notAllowed(res) {
   res.writeHead(503);
@@ -43,18 +44,32 @@ module.exports = function handleRequest(req, res) {
     return;
   }
 
-  if (req.url == "/service.php") {
+  // if (req.url == "/service.php") {
+  //   if (req.method != "POST") return notAllowed(res);
+  //   readFormData(req, "form", (err, post) => {
+  //     if (err) return showError(res, err);
+  //     if (post.action != "build") return notAllowed(res);
+  //     let input;
+  //     try {
+  //       input = JSON.parse(post.input);
+  //     } catch (e) {
+  //       return showError(res, e);
+  //     }
+  //     require('./build')(input, (err, result) => {
+  //       if (err) return showError(res, err);
+  //       res.setHeader('Content-type', 'application/json');
+  //       res.writeHead(200);
+  //       res.end(JSON.stringify(result));
+  //     });
+  //   });
+  //   return;
+  // }
+
+  if (req.url == "/build/c") {
     if (req.method != "POST") return notAllowed(res);
-    readFormData(req, "form", (err, post) => {
+    readFormData(req, "json", (err, input) => {
       if (err) return showError(res, err);
-      if (post.action != "build") return notAllowed(res);
-      let input;
-      try {
-        input = JSON.parse(post.input);
-      } catch (e) {
-        return showError(res, e);
-      }
-      require('./build')(input, (err, result) => {
+      require('./build').build_c(input, (err, result) => {
         if (err) return showError(res, err);
         res.setHeader('Content-type', 'application/json');
         res.writeHead(200);
@@ -64,11 +79,26 @@ module.exports = function handleRequest(req, res) {
     return;
   }
 
-  if (req.url == "/build") {
+  if (req.url == "/build/cpp") {
     if (req.method != "POST") return notAllowed(res);
     readFormData(req, "json", (err, input) => {
       if (err) return showError(res, err);
-      require('./build')(input, (err, result) => {
+      require('./build').build_cpp(input, (err, result) => {
+        if (err) return showError(res, err);
+        res.setHeader('Content-type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify(result));
+      });
+    });
+    return;
+  }
+
+
+  if (req.url == "/build/rs") {
+    if (req.method != "POST") return notAllowed(res);
+    readFormData(req, "json", (err, post) => {
+      if (err) return showError(res, err);
+      rustc(post.code, post.options, (err, result) => {
         if (err) return showError(res, err);
         res.setHeader('Content-type', 'application/json');
         res.writeHead(200);
