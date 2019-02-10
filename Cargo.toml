@@ -1,0 +1,19 @@
+[package]
+name = "varna-rustc-api"
+version = "0.1.0"
+authors = ["Alex Crichton <alex@alexcrichton.com>", "Achala S <achalasbhatt@gmail.com>"]
+
+# libraries for rust contract
+[lib]
+path = "utils/blank.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+ewasm_api = "0.6.0"
+
+[profile.release]
+lto = true
+opt-level = 's'
+debug = true
+incremental= false
