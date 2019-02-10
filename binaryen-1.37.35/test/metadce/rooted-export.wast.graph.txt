@@ -1,8 +1,0 @@
-[
-  {
-    "name": "rooted-export",
-    "root": true,
-    "export": "wasm_func_b"
-  }
-]
-
