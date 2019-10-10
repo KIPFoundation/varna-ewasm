@@ -1,6 +1,7 @@
 const {
     rustcCmd,
-    //  extension for wasmGC and wasmdis
+    //  extension for wasmGC and chisel and wasmdis
+    chiselCmd,
     wasmGCCmd,
     wasmdisCmd,
     tempDir,
@@ -9,7 +10,8 @@ const {
   } = require("../config.js");
   const { exec, joinCmd, exists, writeFile, readFile, unlink} = require("./common.js");
   const fs = require("fs");
-  const gcWasm = 'CompiledWasm.wasm';
+  const gcWasm = 'gcWasm.wasm';
+  const chiseledWasm = 'chiseledWasmFile.wasm';
   const wasmDis = 'wasmDisFile.wat';
   
   //  extension for wasmGC 
@@ -29,14 +31,27 @@ const {
     }
   }
   
+  //  extension for chisel 
+  async function chisel(optimisedWasmFile) {
+    if (!fs.existsSync(optimisedWasmFile)) {
+      throw new Error("Wasm is not optimised")
+    }
+   try{
+    await exec(joinCmd([chiselCmd, optimisedWasmFile, chiseledWasm]));
+    console.log("Chiseled File Name: " + chiseledWasm);
+    return chiseledWasm;
+    } catch (e){
+     return e.message;
+   }
+  }
   
   //  extension for wasmdis
-  async function wasmdis(optimizedWasmFile) {
-    if (!fs.existsSync(optimizedWasmFile)) {
+  async function wasmdis(chiseledWasmFile) {
+    if (!fs.existsSync(chiseledWasmFile)) {
       throw new Error("Wat file is not found")
     }
     try {
-    await exec(joinCmd([wasmdisCmd, optimizedWasmFile, '-o', wasmDis]));  
+    await exec(joinCmd([wasmdisCmd, chiseledWasmFile, '-o', wasmDis]));  
     console.log("Wasmdis File Name: " + wasmDis);
     } catch(e){
       return e.message;
@@ -99,10 +114,11 @@ const {
         let wasm = await readFile(wasmFile);
         let ret = { success, message: output };
         
-        // extension for wasmGC and wasmdis
+        // extension for wasmGC and chisel and wasmdis
         await writeFile('./in.wasm', wasm);
         let wasmGCFile = await wasmGC(wasm);  
-        let wasmDisFile = await wasmdis(wasmGCFile);
+        let chiseledWasmFile = await chisel(wasmGCFile);
+        let wasmDisFile = await wasmdis(chiseledWasmFile);
         ret.output = wasmDisFile;      
         return ret;
       }
