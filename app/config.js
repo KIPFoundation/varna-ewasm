@@ -32,11 +32,9 @@ exports.llvmDir = onServer ?
   wasmceptionDir + '/dist';
 
 
-//  extension command for wasmGC and chisel and wasmdis
+//  extension command for wasmGC and wasmdis
 
 exports.wasmGCCmd = homeDir + '/.cargo/bin/wasm-gc';
-
-exports.chiselCmd = homeDir + '/.cargo/bin/chisel';
 
 // exports.pychiselCmd = homeDir + '/codes/varna/pywebassembly/examples/';
 exports.pychiselCmd = __dirname + '/../pywebassembly/examples/';
